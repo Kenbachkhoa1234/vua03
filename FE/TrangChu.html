@@ -334,6 +334,34 @@
       document.getElementById('leaderboard-modal').style.display = 'none';
     }
 
+    // ===== SCREEN NAVIGATION =====
+    function showScreen(screenId) {
+      // Kiểm tra xem user có token không nếu vào multiplayer-screen
+      if (screenId === 'multiplayer-screen') {
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+          alert('Vui lòng đăng nhập để chơi với người khác');
+          return;
+        }
+      }
+      
+      // Ẩn tất cả screens
+      const screens = document.querySelectorAll('.screen');
+      screens.forEach(screen => {
+        screen.classList.remove('active');
+        screen.style.display = 'none';
+      });
+      
+      // Hiển thị screen được chọn
+      const selectedScreen = document.getElementById(screenId);
+      if (selectedScreen) {
+        selectedScreen.classList.add('active');
+        selectedScreen.style.display = 'block';
+      } else {
+        console.error('Screen not found:', screenId);
+      }
+    }
+
     // Khởi tạo UI khi trang load
     window.addEventListener('DOMContentLoaded', () => {
       updateUserUI();
@@ -343,12 +371,14 @@
 
     async function createFriendsRoom() {
       const token = localStorage.getItem('authToken');
+      console.log('Token:', token); // Debug
       if (!token) {
         alert('Vui lòng đăng nhập để chơi');
         return;
       }
 
       try {
+        console.log('Creating room...'); // Debug
         const response = await fetch('/api/multiplayer/create-room', {
           method: 'POST',
           headers: {
@@ -358,7 +388,10 @@
           body: JSON.stringify({ mode: 'friends' })
         });
 
+        console.log('Response status:', response.status); // Debug
         const data = await response.json();
+        console.log('Response data:', data); // Debug
+        
         if (data.success) {
           document.getElementById('display-room-code').textContent = data.room_id;
           document.getElementById('room-created').style.display = 'block';
@@ -370,6 +403,7 @@
           alert('Lỗi: ' + data.message);
         }
       } catch (error) {
+        console.error('Error:', error); // Debug
         alert('Lỗi: ' + error.message);
       }
     }
