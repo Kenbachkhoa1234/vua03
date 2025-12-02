@@ -37,15 +37,15 @@ def index():
     return render_template('TrangChu.html')
 
 @app.route('/login.html')
-def login():
+def login_page():
     return render_template('login.html')
 
 @app.route('/register.html')
-def register():
+def register_page():
     return render_template('register.html')
 
 @app.route('/BanCo.html')
-def game():
+def game_page():
     return render_template('BanCo.html')
 
 # ===== API AUTHENTICATION =====
