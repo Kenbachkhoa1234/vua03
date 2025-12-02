@@ -7,29 +7,25 @@ from datetime import datetime, timedelta
 from functools import wraps
 from flask import request, jsonify
 
-# ===== AUTHENTICATION MODULE =====
+# ===== AUTHENTICATION MODULE WITH IN-MEMORY DATABASE =====
+# Sử dụng in-memory database vì Vercel không cho phép ghi file
 
-# File lưu trữ users
-USERS_FILE = os.path.join(os.path.dirname(__file__), 'users.json')
-SECRET_KEY = 'your-secret-key-change-this-in-production'
+SECRET_KEY = os.environ.get('SECRET_KEY', 'your-secret-key-chess-game-2024')
 TOKEN_EXPIRATION = 24 * 60 * 60  # 24 hours
+
+# In-memory database
+USERS_DB = {}
 
 class AuthManager:
     def __init__(self):
-        self.load_users()
+        self.users = USERS_DB
+        self.load_demo_users()
     
-    def load_users(self):
-        """Load users từ file JSON"""
-        if os.path.exists(USERS_FILE):
-            with open(USERS_FILE, 'r', encoding='utf-8') as f:
-                self.users = json.load(f)
-        else:
-            self.users = {}
-    
-    def save_users(self):
-        """Lưu users vào file JSON"""
-        with open(USERS_FILE, 'w', encoding='utf-8') as f:
-            json.dump(self.users, f, ensure_ascii=False, indent=2)
+    def load_demo_users(self):
+        """Load demo users cho testing"""
+        if not self.users:
+            self.register('demo', 'demo@example.com', 'demo123', 1200)
+            self.register('admin', 'admin@example.com', 'admin123', 1500)
     
     def hash_password(self, password):
         """Hash mật khẩu với SHA-256"""
@@ -88,8 +84,6 @@ class AuthManager:
             'last_login': None
         }
         
-        self.save_users()
-        
         return {
             'success': True,
             'message': 'Tạo tài khoản thành công',
@@ -114,7 +108,6 @@ class AuthManager:
         
         # Cập nhật last_login
         user['last_login'] = datetime.now().isoformat()
-        self.save_users()
         
         return {
             'success': True,
@@ -142,7 +135,6 @@ class AuthManager:
                 for key, value in kwargs.items():
                     if key != 'password' and key != 'user_id':
                         user[key] = value
-                self.save_users()
                 return True
         return False
     
