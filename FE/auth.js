@@ -19,6 +19,7 @@ function logout() {
     localStorage.removeItem('authToken');
     localStorage.removeItem('userName');
     localStorage.removeItem('userId');
+    localStorage.removeItem('userElo');
     window.location.href = 'login.html';
 }
 

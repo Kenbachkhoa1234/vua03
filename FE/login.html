@@ -91,13 +91,23 @@
                     body: JSON.stringify({ email, password })
                 });
 
+                console.log('Login response status:', response.status);
                 const data = await response.json();
+                console.log('Login response data:', data);
 
                 if (data.success) {
                     // Lưu token vào localStorage
                     localStorage.setItem('authToken', data.token);
                     localStorage.setItem('userName', data.username);
                     localStorage.setItem('userId', data.user_id);
+                    localStorage.setItem('userElo', data.elo);
+                    
+                    console.log('Stored data:', {
+                        authToken: data.token,
+                        userName: data.username,
+                        userId: data.user_id,
+                        userElo: data.elo
+                    });
                     
                     if (rememberMe) {
                         localStorage.setItem('rememberEmail', email);
@@ -116,11 +126,13 @@
                     const errorAlert = document.getElementById('login-error-alert');
                     errorAlert.textContent = '❌ ' + (data.message || 'Đăng nhập thất bại');
                     errorAlert.style.display = 'block';
+                    console.error('Login failed:', data.message);
                 }
             } catch (error) {
                 const errorAlert = document.getElementById('login-error-alert');
                 errorAlert.textContent = '❌ Lỗi kết nối. Vui lòng thử lại!';
                 errorAlert.style.display = 'block';
+                console.error('Login error:', error);
             }
         });
 
