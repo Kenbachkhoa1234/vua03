@@ -1,8 +1,8 @@
-Flask==2.3.0
-flask-cors==4.0.0
+Flask==2.3.2
+flask-cors==6.0.0
 python-chess==1.999
 PyJWT==2.8.0
-Werkzeug==2.3.0
+Werkzeug==3.1.4
 python-socketio==5.9.0
 python-engineio==4.7.1
 requests==2.31.0
