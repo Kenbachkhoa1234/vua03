@@ -1,12 +1,9 @@
 {
-  "buildCommand": "echo 'Build complete'",
-  "devCommand": "python BE/app.py",
+  "buildCommand": "pip install -r requirements.txt",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.py" }
+  ],
   "env": {
     "PYTHONUNBUFFERED": "1"
-  },
-  "functions": {
-    "BE/app.py": {
-      "runtime": "python3.12"
-    }
   }
 }
