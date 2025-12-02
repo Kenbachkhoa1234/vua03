@@ -1,0 +1,12 @@
+{
+  "buildCommand": "echo 'Build complete'",
+  "devCommand": "python BE/app.py",
+  "env": {
+    "PYTHONUNBUFFERED": "1"
+  },
+  "functions": {
+    "BE/app.py": {
+      "runtime": "python3.12"
+    }
+  }
+}
