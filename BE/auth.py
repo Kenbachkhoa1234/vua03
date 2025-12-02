@@ -1,4 +1,3 @@
-import json
 import os
 import hashlib
 import uuid
@@ -7,23 +6,44 @@ from datetime import datetime, timedelta
 from functools import wraps
 from flask import request, jsonify
 
-# ===== AUTHENTICATION MODULE WITH IN-MEMORY DATABASE =====
-# Sử dụng in-memory database vì Vercel không cho phép ghi file
+# Try to import Supabase, fallback to demo mode if not available
+try:
+    from supabase import create_client, Client
+    HAS_SUPABASE = True
+except ImportError:
+    HAS_SUPABASE = False
+    print("Warning: supabase package not installed. Using demo mode.")
+
+# ===== SUPABASE AUTHENTICATION MODULE =====
 
 SECRET_KEY = os.environ.get('SECRET_KEY', 'your-secret-key-chess-game-2024')
 TOKEN_EXPIRATION = 24 * 60 * 60  # 24 hours
 
-# In-memory database
-USERS_DB = {}
+# Initialize Supabase client
+SUPABASE_URL = os.environ.get('SUPABASE_URL', '')
+SUPABASE_KEY = os.environ.get('SUPABASE_KEY', '')
+
+supabase = None
+if HAS_SUPABASE and SUPABASE_URL and SUPABASE_KEY:
+    try:
+        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+        print("✓ Connected to Supabase")
+    except Exception as e:
+        print(f"Warning: Supabase connection failed: {e}")
+
+# Fallback demo database
+DEMO_USERS = {}
 
 class AuthManager:
     def __init__(self):
-        self.users = USERS_DB
-        self.load_demo_users()
+        self.supabase = supabase
+        self.use_db = supabase is not None
+        if not self.use_db:
+            self.load_demo_users()
     
     def load_demo_users(self):
-        """Load demo users cho testing"""
-        if not self.users:
+        """Load demo users cho testing (khi không có Supabase)"""
+        if not DEMO_USERS:
             self.register('demo', 'demo@example.com', 'demo123', 1200)
             self.register('admin', 'admin@example.com', 'admin123', 1500)
     
@@ -54,105 +74,205 @@ class AuthManager:
     
     def register(self, username, email, password, elo=1000):
         """Đăng ký user mới"""
-        # Kiểm tra user đã tồn tại
-        if email in self.users:
-            return {'success': False, 'message': 'Email đã được sử dụng'}
-        
-        # Kiểm tra username đã tồn tại
-        for user in self.users.values():
-            if user.get('username') == username:
-                return {'success': False, 'message': 'Tên người dùng đã tồn tại'}
-        
-        # Kiểm tra độ dài password
-        if len(password) < 6:
-            return {'success': False, 'message': 'Mật khẩu phải có ít nhất 6 ký tự'}
-        
-        # Tạo user mới
-        user_id = str(uuid.uuid4())
-        hashed_password = self.hash_password(password)
-        
-        self.users[email] = {
-            'user_id': user_id,
-            'username': username,
-            'email': email,
-            'password': hashed_password,
-            'elo': elo,
-            'wins': 0,
-            'losses': 0,
-            'draws': 0,
-            'created_at': datetime.now().isoformat(),
-            'last_login': None
-        }
-        
-        return {
-            'success': True,
-            'message': 'Tạo tài khoản thành công',
-            'user_id': user_id
-        }
+        try:
+            if self.use_db:
+                # Use Supabase
+                # Kiểm tra email đã tồn tại
+                response = self.supabase.table('users').select('id').eq('email', email).execute()
+                if response.data and len(response.data) > 0:
+                    return {'success': False, 'message': 'Email đã được sử dụng'}
+                
+                # Kiểm tra username đã tồn tại
+                response = self.supabase.table('users').select('id').eq('username', username).execute()
+                if response.data and len(response.data) > 0:
+                    return {'success': False, 'message': 'Tên người dùng đã tồn tại'}
+                
+                # Kiểm tra độ dài password
+                if len(password) < 6:
+                    return {'success': False, 'message': 'Mật khẩu phải có ít nhất 6 ký tự'}
+                
+                # Tạo user mới
+                user_id = str(uuid.uuid4())
+                hashed_password = self.hash_password(password)
+                
+                new_user = {
+                    'id': user_id,
+                    'username': username,
+                    'email': email,
+                    'password': hashed_password,
+                    'elo': elo,
+                    'wins': 0,
+                    'losses': 0,
+                    'draws': 0,
+                    'created_at': datetime.now().isoformat(),
+                    'last_login': None
+                }
+                
+                response = self.supabase.table('users').insert(new_user).execute()
+                
+                if response.data:
+                    return {
+                        'success': True,
+                        'message': 'Tạo tài khoản thành công',
+                        'user_id': user_id
+                    }
+                else:
+                    return {'success': False, 'message': 'Lỗi tạo tài khoản'}
+            else:
+                # Use demo mode
+                if email in DEMO_USERS:
+                    return {'success': False, 'message': 'Email đã được sử dụng'}
+                
+                for user in DEMO_USERS.values():
+                    if user.get('username') == username:
+                        return {'success': False, 'message': 'Tên người dùng đã tồn tại'}
+                
+                if len(password) < 6:
+                    return {'success': False, 'message': 'Mật khẩu phải có ít nhất 6 ký tự'}
+                
+                user_id = str(uuid.uuid4())
+                hashed_password = self.hash_password(password)
+                
+                DEMO_USERS[email] = {
+                    'id': user_id,
+                    'username': username,
+                    'email': email,
+                    'password': hashed_password,
+                    'elo': elo,
+                    'wins': 0,
+                    'losses': 0,
+                    'draws': 0,
+                    'created_at': datetime.now().isoformat(),
+                    'last_login': None
+                }
+                
+                return {
+                    'success': True,
+                    'message': 'Tạo tài khoản thành công',
+                    'user_id': user_id
+                }
+        except Exception as e:
+            print(f"Register error: {e}")
+            return {'success': False, 'message': f'Lỗi: {str(e)}'}
     
     def login(self, email, password):
         """Đăng nhập"""
-        # Kiểm tra email tồn tại
-        if email not in self.users:
-            return {'success': False, 'message': 'Email hoặc mật khẩu không đúng'}
-        
-        user = self.users[email]
-        hashed_password = self.hash_password(password)
-        
-        # Kiểm tra mật khẩu
-        if user['password'] != hashed_password:
-            return {'success': False, 'message': 'Email hoặc mật khẩu không đúng'}
-        
-        # Tạo token
-        token = self.generate_token(user['user_id'], user['username'])
-        
-        # Cập nhật last_login
-        user['last_login'] = datetime.now().isoformat()
-        
-        return {
-            'success': True,
-            'message': 'Đăng nhập thành công',
-            'token': token,
-            'user_id': user['user_id'],
-            'username': user['username'],
-            'elo': user['elo']
-        }
+        try:
+            if self.use_db:
+                # Use Supabase
+                response = self.supabase.table('users').select('*').eq('email', email).execute()
+                
+                if not response.data or len(response.data) == 0:
+                    return {'success': False, 'message': 'Email hoặc mật khẩu không đúng'}
+                
+                user = response.data[0]
+                hashed_password = self.hash_password(password)
+                
+                if user['password'] != hashed_password:
+                    return {'success': False, 'message': 'Email hoặc mật khẩu không đúng'}
+                
+                token = self.generate_token(user['id'], user['username'])
+                
+                # Cập nhật last_login
+                self.supabase.table('users').update({'last_login': datetime.now().isoformat()}).eq('id', user['id']).execute()
+                
+                return {
+                    'success': True,
+                    'message': 'Đăng nhập thành công',
+                    'token': token,
+                    'user_id': user['id'],
+                    'username': user['username'],
+                    'elo': user['elo']
+                }
+            else:
+                # Use demo mode
+                if email not in DEMO_USERS:
+                    return {'success': False, 'message': 'Email hoặc mật khẩu không đúng'}
+                
+                user = DEMO_USERS[email]
+                hashed_password = self.hash_password(password)
+                
+                if user['password'] != hashed_password:
+                    return {'success': False, 'message': 'Email hoặc mật khẩu không đúng'}
+                
+                token = self.generate_token(user['id'], user['username'])
+                user['last_login'] = datetime.now().isoformat()
+                
+                return {
+                    'success': True,
+                    'message': 'Đăng nhập thành công',
+                    'token': token,
+                    'user_id': user['id'],
+                    'username': user['username'],
+                    'elo': user['elo']
+                }
+        except Exception as e:
+            print(f"Login error: {e}")
+            return {'success': False, 'message': f'Lỗi: {str(e)}'}
     
     def get_user(self, user_id):
         """Lấy thông tin user theo user_id"""
-        for user in self.users.values():
-            if user.get('user_id') == user_id:
-                # Không trả về password
-                user_data = user.copy()
-                del user_data['password']
-                return user_data
-        return None
+        try:
+            if self.use_db:
+                response = self.supabase.table('users').select('*').eq('id', user_id).execute()
+                
+                if response.data and len(response.data) > 0:
+                    user_data = response.data[0].copy()
+                    if 'password' in user_data:
+                        del user_data['password']
+                    return user_data
+                return None
+            else:
+                for user in DEMO_USERS.values():
+                    if user.get('id') == user_id:
+                        user_data = user.copy()
+                        del user_data['password']
+                        return user_data
+                return None
+        except Exception as e:
+            print(f"Get user error: {e}")
+            return None
     
     def update_user(self, user_id, **kwargs):
         """Cập nhật thông tin user"""
-        for user in self.users.values():
-            if user.get('user_id') == user_id:
-                for key, value in kwargs.items():
-                    if key != 'password' and key != 'user_id':
-                        user[key] = value
-                return True
-        return False
+        try:
+            if self.use_db:
+                update_data = {k: v for k, v in kwargs.items() if k not in ['password', 'id']}
+                response = self.supabase.table('users').update(update_data).eq('id', user_id).execute()
+                return bool(response.data)
+            else:
+                for user in DEMO_USERS.values():
+                    if user.get('id') == user_id:
+                        for key, value in kwargs.items():
+                            if key not in ['password', 'id']:
+                                user[key] = value
+                        return True
+                return False
+        except Exception as e:
+            print(f"Update user error: {e}")
+            return False
     
     def get_leaderboard(self, limit=100):
         """Lấy bảng xếp hạng"""
-        users_list = []
-        for user in self.users.values():
-            users_list.append({
-                'username': user['username'],
-                'elo': user['elo'],
-                'wins': user['wins'],
-                'losses': user['losses'],
-                'draws': user['draws']
-            })
-        
-        # Sắp xếp theo ELO giảm dần
-        users_list.sort(key=lambda x: x['elo'], reverse=True)
-        return users_list[:limit]
+        try:
+            if self.use_db:
+                response = self.supabase.table('users').select('username,elo,wins,losses,draws').order('elo', desc=True).limit(limit).execute()
+                return response.data if response.data else []
+            else:
+                users_list = []
+                for user in DEMO_USERS.values():
+                    users_list.append({
+                        'username': user['username'],
+                        'elo': user['elo'],
+                        'wins': user['wins'],
+                        'losses': user['losses'],
+                        'draws': user['draws']
+                    })
+                users_list.sort(key=lambda x: x['elo'], reverse=True)
+                return users_list[:limit]
+        except Exception as e:
+            print(f"Get leaderboard error: {e}")
+            return []
 
 # Initialize auth manager
 auth_manager = AuthManager()
