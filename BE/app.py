@@ -15,6 +15,7 @@ sys.path.insert(0, current_dir)
 
 from chess_engine import ChessEngine
 from auth import auth_manager, token_required
+from multiplayer import multiplayer_manager
 
 app = Flask(__name__, 
             static_folder=os.path.join(os.path.dirname(__file__), '../FE'),
@@ -197,6 +198,169 @@ def ai_controls(game_id):
         return jsonify(engine.get_status())
 
     return jsonify({'error': 'Invalid action'}), 400
+
+# ===== API cho Multiplayer =====
+
+@app.route('/api/multiplayer/create-room', methods=['POST'])
+@token_required
+def create_room():
+    """Tạo phòng chơi cùng bạn bè"""
+    try:
+        data = request.json
+        mode = data.get('mode', 'friends')  # 'friends' hoặc 'random'
+        
+        user = auth_manager.get_user(request.user_id)
+        if not user:
+            return jsonify({'success': False, 'message': 'User không tồn tại'}), 404
+        
+        room_id, room_info = multiplayer_manager.create_room(
+            request.user_id, 
+            user['username'],
+            mode
+        )
+        
+        return jsonify({
+            'success': True,
+            'room_id': room_id,
+            'room': room_info
+        }), 201
+    
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Lỗi: {str(e)}'}), 500
+
+@app.route('/api/multiplayer/join-room', methods=['POST'])
+@token_required
+def join_room():
+    """Tham gia phòng với mã ID"""
+    try:
+        data = request.json
+        room_id = data.get('room_id', '').strip()
+        
+        if not room_id:
+            return jsonify({'success': False, 'message': 'Vui lòng nhập mã phòng'}), 400
+        
+        user = auth_manager.get_user(request.user_id)
+        if not user:
+            return jsonify({'success': False, 'message': 'User không tồn tại'}), 404
+        
+        success, message, room_info = multiplayer_manager.join_room(
+            room_id,
+            request.user_id,
+            user['username']
+        )
+        
+        if success:
+            return jsonify({
+                'success': True,
+                'message': message,
+                'room': room_info
+            }), 200
+        else:
+            return jsonify({'success': False, 'message': message}), 400
+    
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Lỗi: {str(e)}'}), 500
+
+@app.route('/api/multiplayer/find-random', methods=['POST'])
+@token_required
+def find_random_match():
+    """Tìm đối thủ random"""
+    try:
+        user = auth_manager.get_user(request.user_id)
+        if not user:
+            return jsonify({'success': False, 'message': 'User không tồn tại'}), 404
+        
+        found, room_id, match_info = multiplayer_manager.find_random_match(
+            request.user_id,
+            user['username']
+        )
+        
+        if found:
+            return jsonify({
+                'success': True,
+                'matched': True,
+                'room_id': room_id,
+                'room': match_info
+            }), 200
+        else:
+            return jsonify({
+                'success': True,
+                'matched': False,
+                'message': 'Đang tìm đối thủ...'
+            }), 202
+    
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Lỗi: {str(e)}'}), 500
+
+@app.route('/api/multiplayer/cancel-matchmaking', methods=['POST'])
+@token_required
+def cancel_matchmaking():
+    """Hủy tìm đối thủ random"""
+    try:
+        multiplayer_manager.cancel_matchmaking(request.user_id)
+        return jsonify({'success': True, 'message': 'Đã hủy tìm kiếm'}), 200
+    
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Lỗi: {str(e)}'}), 500
+
+@app.route('/api/multiplayer/get-room/<room_id>', methods=['GET'])
+@token_required
+def get_room(room_id):
+    """Lấy thông tin phòng"""
+    try:
+        room_info = multiplayer_manager.get_room(room_id)
+        if not room_info:
+            return jsonify({'success': False, 'message': 'Phòng không tồn tại'}), 404
+        
+        return jsonify({
+            'success': True,
+            'room': room_info
+        }), 200
+    
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Lỗi: {str(e)}'}), 500
+
+@app.route('/api/multiplayer/make-move', methods=['POST'])
+@token_required
+def make_move_multiplayer():
+    """Thực hiện nước đi"""
+    try:
+        data = request.json
+        move = data.get('move', '')
+        
+        if not move:
+            return jsonify({'success': False, 'message': 'Vui lòng nhập nước đi'}), 400
+        
+        success, message, room_info = multiplayer_manager.make_move(request.user_id, move)
+        
+        if success:
+            return jsonify({
+                'success': True,
+                'message': 'Nước đi thành công',
+                'room': room_info
+            }), 200
+        else:
+            return jsonify({
+                'success': False,
+                'message': message
+            }), 400
+    
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Lỗi: {str(e)}'}), 500
+
+@app.route('/api/multiplayer/leave-room', methods=['POST'])
+@token_required
+def leave_room():
+    """Rời phòng"""
+    try:
+        multiplayer_manager.leave_room(request.user_id)
+        return jsonify({
+            'success': True,
+            'message': 'Đã rời phòng'
+        }), 200
+    
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Lỗi: {str(e)}'}), 500
 
 @app.route('/api/health', methods=['GET'])
 def health():

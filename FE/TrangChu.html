@@ -40,7 +40,7 @@
         </a>
         <button
           class="button btn-success"
-          onclick="showScreen('player-screen')"
+          onclick="showScreen('multiplayer-screen')"
         >
           👥 Đánh với Người
         </button>
@@ -49,7 +49,92 @@
         </button>
       </div>
 
-      <!-- CHỌN CẤP ĐỘ AI -->
+      <!-- MULTIPLAYER SCREEN -->
+      <div id="multiplayer-screen" class="screen">
+        <h2>Đánh với Người</h2>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+          <!-- Đánh với Bạn Bè -->
+          <div style="border: 2px solid #3498db; padding: 20px; border-radius: 10px; text-align: center;">
+            <h3>👫 Với Bạn Bè</h3>
+            <p style="color: #666; font-size: 0.9rem;">Tạo phòng riêng và chia sẻ mã với bạn</p>
+            <button class="button btn-primary" onclick="createFriendsRoom()">Tạo Phòng</button>
+            <p style="margin: 10px 0; font-size: 0.85rem; color: #999;">hoặc</p>
+            <input 
+              type="text" 
+              id="room-code" 
+              placeholder="Nhập mã phòng (6 chữ số)" 
+              maxlength="6"
+              style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; margin-bottom: 10px;"
+            />
+            <button class="button btn-success" onclick="joinFriendsRoom()">Tham Gia Phòng</button>
+          </div>
+
+          <!-- Đánh Random -->
+          <div style="border: 2px solid #e74c3c; padding: 20px; border-radius: 10px; text-align: center;">
+            <h3>🎲 Random</h3>
+            <p style="color: #666; font-size: 0.9rem;">Tìm đối thủ ngẫu nhiên từ khắp nơi</p>
+            <button class="button btn-danger" id="random-match-btn" onclick="findRandomMatch()">Tìm Trận</button>
+            <button class="button btn-secondary" id="cancel-match-btn" onclick="cancelRandomMatch()" style="display: none;">Hủy Tìm Kiếm</button>
+            <p id="match-status" style="margin-top: 10px; color: #666; font-size: 0.9rem;"></p>
+          </div>
+        </div>
+
+        <!-- Room Code Display (sau khi tạo phòng) -->
+        <div id="room-created" style="display: none; background: #f0f0f0; padding: 20px; border-radius: 10px; text-align: center; margin-bottom: 20px;">
+          <h3>📍 Mã Phòng Của Bạn</h3>
+          <p style="font-size: 2em; font-weight: bold; color: #3498db; letter-spacing: 2px;" id="display-room-code"></p>
+          <p style="color: #666; font-size: 0.9rem;">Chia sẻ mã này cho bạn để tham gia chơi</p>
+          <p id="room-status" style="color: #666; margin-top: 10px;"></p>
+        </div>
+
+        <button class="button btn-secondary" onclick="showScreen('menu-screen')">← Quay lại</button>
+      </div>
+
+      <!-- GAME SCREEN (cho multiplayer) -->
+      <div id="game-screen" class="screen">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+          <h2>⚔️ Trò Chơi</h2>
+          <button class="button btn-secondary btn-small" onclick="leaveMultiplayerGame()">Rời Trò Chơi</button>
+        </div>
+        
+        <div id="game-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+          <!-- Bàn Cờ -->
+          <div id="board-wrapper">
+            <div id="chess-board" style="width: 100%; max-width: 500px; border: 2px solid #333; background: #f0d9b5;"></div>
+          </div>
+
+          <!-- Game Info -->
+          <div style="padding: 20px; background: #f5f5f5; border-radius: 10px;">
+            <h3>Thông Tin Trò Chơi</h3>
+            
+            <div style="margin: 15px 0;">
+              <p style="color: #666; margin-bottom: 5px;">⚪ Trắng:</p>
+              <p style="font-weight: bold; color: #333;" id="player-white"></p>
+            </div>
+
+            <div style="margin: 15px 0;">
+              <p style="color: #666; margin-bottom: 5px;">⚫ Đen:</p>
+              <p style="font-weight: bold; color: #333;" id="player-black"></p>
+            </div>
+
+            <div style="margin: 15px 0; padding: 10px; background: #fff; border-radius: 5px; text-align: center;">
+              <p style="color: #666; margin-bottom: 5px;">Lượt của:</p>
+              <p style="font-weight: bold; font-size: 1.2em; color: #3498db;" id="current-turn"></p>
+            </div>
+
+            <div style="margin: 15px 0;">
+              <p style="color: #666;">Trạng thái: <span id="game-status" style="color: #3498db; font-weight: bold;">Đang Chơi</span></p>
+            </div>
+
+            <div id="move-history" style="margin-top: 15px; background: #fff; padding: 10px; border-radius: 5px; max-height: 200px; overflow-y: auto;">
+              <p style="color: #999; font-size: 0.9rem; margin: 0;">Lịch sử nước đi...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LỰA CHỌN CẤP ĐỘ AI -->
       <div id="level-screen" class="screen">
         <h2>Chọn Cấp Độ AI</h2>
         <div class="level-grid">
@@ -100,54 +185,6 @@
           ← Quay lại
         </button>
       </div>
-
-      <!-- ĐÁNH VỚI NGƯỜI -->
-      <div id="player-screen" class="screen">
-        <h2>Đánh với Người</h2>
-
-        <div class="input-group">
-          <label>Tên của bạn:</label>
-          <input
-            type="text"
-            id="player-name"
-            placeholder="Nhập tên người chơi"
-            maxlength="20"
-          />
-        </div>
-
-        <div class="input-group">
-          <label>Chọn hạng của bạn:</label>
-          <div class="rank-selector">
-            <div class="rank-option" onclick="selectRank('bronze')">
-              <div class="rank-icon">🥉</div>
-              <div class="rank-name">Đồng</div>
-            </div>
-            <div class="rank-option" onclick="selectRank('silver')">
-              <div class="rank-icon">🥈</div>
-              <div class="rank-name">Bạc</div>
-            </div>
-            <div class="rank-option" onclick="selectRank('gold')">
-              <div class="rank-icon">🥇</div>
-              <div class="rank-name">Vàng</div>
-            </div>
-          </div>
-        </div>
-
-        <button
-          class="button btn-primary"
-          onclick="findMatch()"
-          id="find-match-btn"
-        >
-          🎮 Tìm Trận Đấu
-        </button>
-
-        <div id="match-status"></div>
-
-        <button
-          class="button btn-secondary"
-          onclick="showScreen('menu-screen')"
-        >
-          ← Quay lại
         </button>
       </div>
 
@@ -301,5 +338,243 @@
     window.addEventListener('DOMContentLoaded', () => {
       updateUserUI();
     });
+
+    // ===== MULTIPLAYER FUNCTIONS =====
+
+    async function createFriendsRoom() {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        alert('Vui lòng đăng nhập để chơi');
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/multiplayer/create-room', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ mode: 'friends' })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          document.getElementById('display-room-code').textContent = data.room_id;
+          document.getElementById('room-created').style.display = 'block';
+          document.getElementById('room-status').textContent = '⏳ Đang chờ bạn tham gia...';
+          
+          // Poll để kiểm tra khi bạn tham gia
+          pollRoomStatus(data.room_id);
+        } else {
+          alert('Lỗi: ' + data.message);
+        }
+      } catch (error) {
+        alert('Lỗi: ' + error.message);
+      }
+    }
+
+    async function joinFriendsRoom() {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        alert('Vui lòng đăng nhập để chơi');
+        return;
+      }
+
+      const roomCode = document.getElementById('room-code').value.trim();
+      if (!roomCode) {
+        alert('Vui lòng nhập mã phòng');
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/multiplayer/join-room', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ room_id: roomCode })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          startMultiplayerGame(data.room.room_id);
+        } else {
+          alert('Lỗi: ' + data.message);
+        }
+      } catch (error) {
+        alert('Lỗi: ' + error.message);
+      }
+    }
+
+    async function findRandomMatch() {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        alert('Vui lòng đăng nhập để chơi');
+        return;
+      }
+
+      try {
+        document.getElementById('random-match-btn').style.display = 'none';
+        document.getElementById('cancel-match-btn').style.display = 'inline-block';
+        document.getElementById('match-status').textContent = '⏳ Đang tìm đối thủ...';
+
+        const response = await fetch('/api/multiplayer/find-random', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        const data = await response.json();
+        if (data.success && data.matched) {
+          startMultiplayerGame(data.room_id);
+        } else {
+          // Poll mỗi 2 giây để kiểm tra match
+          pollMatchmaking(token);
+        }
+      } catch (error) {
+        alert('Lỗi: ' + error.message);
+        document.getElementById('random-match-btn').style.display = 'inline-block';
+        document.getElementById('cancel-match-btn').style.display = 'none';
+      }
+    }
+
+    async function pollMatchmaking(token) {
+      const pollInterval = setInterval(async () => {
+        if (!document.getElementById('cancel-match-btn') || 
+            document.getElementById('cancel-match-btn').style.display === 'none') {
+          clearInterval(pollInterval);
+          return;
+        }
+
+        try {
+          const response = await fetch('/api/multiplayer/find-random', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            }
+          });
+
+          const data = await response.json();
+          if (data.success && data.matched) {
+            clearInterval(pollInterval);
+            startMultiplayerGame(data.room_id);
+          }
+        } catch (error) {
+          console.error('Poll error:', error);
+        }
+      }, 2000);
+    }
+
+    async function pollRoomStatus(roomId) {
+      const token = localStorage.getItem('authToken');
+      const pollInterval = setInterval(async () => {
+        if (!document.getElementById('room-created') || 
+            document.getElementById('room-created').style.display === 'none') {
+          clearInterval(pollInterval);
+          return;
+        }
+
+        try {
+          const response = await fetch(`/api/multiplayer/get-room/${roomId}`, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+
+          const data = await response.json();
+          if (data.success && data.room.status === 'playing') {
+            clearInterval(pollInterval);
+            startMultiplayerGame(roomId);
+          }
+        } catch (error) {
+          console.error('Poll error:', error);
+        }
+      }, 1000);
+    }
+
+    async function cancelRandomMatch() {
+      const token = localStorage.getItem('authToken');
+      try {
+        await fetch('/api/multiplayer/cancel-matchmaking', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        document.getElementById('random-match-btn').style.display = 'inline-block';
+        document.getElementById('cancel-match-btn').style.display = 'none';
+        document.getElementById('match-status').textContent = '';
+      } catch (error) {
+        alert('Lỗi: ' + error.message);
+      }
+    }
+
+    function startMultiplayerGame(roomId) {
+      // Lưu roomId
+      localStorage.setItem('currentRoomId', roomId);
+      showScreen('game-screen');
+      loadGameState(roomId);
+    }
+
+    async function loadGameState(roomId) {
+      const token = localStorage.getItem('authToken');
+      try {
+        const response = await fetch(`/api/multiplayer/get-room/${roomId}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          const room = data.room;
+          
+          // Cập nhật thông tin người chơi
+          const playerWhite = room.players.find(p => p.color === 'white');
+          const playerBlack = room.players.find(p => p.color === 'black');
+          
+          document.getElementById('player-white').textContent = playerWhite?.username || 'Chờ...';
+          document.getElementById('player-black').textContent = playerBlack?.username || 'Chờ...';
+          document.getElementById('current-turn').textContent = room.current_turn === 'white' ? '⚪ Trắng' : '⚫ Đen';
+          
+          // Vẽ bàn cờ
+          renderChessBoard(room.board);
+        }
+      } catch (error) {
+        alert('Lỗi: ' + error.message);
+      }
+    }
+
+    function renderChessBoard(board) {
+      // TODO: Vẽ bàn cờ từ FEN string
+      console.log('Board state:', board);
+    }
+
+    async function leaveMultiplayerGame() {
+      const token = localStorage.getItem('authToken');
+      try {
+        await fetch('/api/multiplayer/leave-room', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        localStorage.removeItem('currentRoomId');
+        showScreen('multiplayer-screen');
+      } catch (error) {
+        alert('Lỗi: ' + error.message);
+      }
+    }
   </script>
 </body>
