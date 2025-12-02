@@ -2,17 +2,24 @@
 
 from flask import Flask, render_template, request, jsonify # type: ignore
 from flask_cors import CORS # type: ignore
-from chess_engine import ChessEngine
-from auth import auth_manager, token_required
 import json
 import random
 import string
 import uuid
 import os
+import sys
+
+# Fix imports - add current directory to path
+current_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, current_dir)
+
+from chess_engine import ChessEngine
+from auth import auth_manager, token_required
 
 app = Flask(__name__, 
-            static_folder='../FE', 
-            template_folder='../FE')
+            static_folder=os.path.join(os.path.dirname(__file__), '../FE'),
+            static_url_path='',
+            template_folder=os.path.join(os.path.dirname(__file__), '../FE'))
 
 # Enable CORS for authentication
 CORS(app)
