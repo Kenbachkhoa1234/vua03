@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cờ Vua Online</title>
+    <link href="TrangChu.css" rel="stylesheet" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    
+  </head>
+  <body>
+    <div id="app-container">
+      <!-- MENU CHÍNH -->
+      <div id="menu-screen" class="screen active">
+        <h1>♔ CỜ VUA ♚</h1>
+        <h2></h2>
+        
+        <!-- User Info Section -->
+        <div id="user-section" style="margin-bottom: 20px; padding: 15px; background: #f0f0f0; border-radius: 10px; text-align: center; display: none;">
+          <p style="color: #666; margin: 0 0 10px 0;">👋 Xin chào, <strong id="user-name"></strong></p>
+          <p style="color: #999; margin: 0; font-size: 0.9rem;">⭐ Rating: <span id="user-elo">1000</span></p>
+          <button id="btn-logout" class="button" style="background: #e74c3c; color: white; margin-top: 10px; padding: 8px;">🚪 Đăng Xuất</button>
+        </div>
+
+        <!-- Auth Buttons (hiển thị khi chưa đăng nhập) -->
+        <div id="auth-buttons" style="display: flex; gap: 10px; margin-bottom: 20px;">
+          <a href="./login.html" style="flex: 1;">
+            <button class="button btn-success">🔑 Đăng Nhập</button>
+          </a>
+          <a href="./register.html" style="flex: 1;">
+            <button class="button btn-warning">✨ Đăng Ký</button>
+          </a>
+        </div>
+
+        <a href="./BanCo.html">
+          <button class="button btn-primary">🤖 Đánh với Máy</button>
+        </a>
+        <button
+          class="button btn-success"
+          onclick="showScreen('player-screen')"
+        >
+          👥 Đánh với Người
+        </button>
+        <button class="button btn-info" onclick="showLeaderboard()">
+          🏆 Bảng Xếp Hạng
+        </button>
+      </div>
+
+      <!-- CHỌN CẤP ĐỘ AI -->
+      <div id="level-screen" class="screen">
+        <h2>Chọn Cấp Độ AI</h2>
+        <div class="level-grid">
+          <a
+            href="http://127.0.0.1:61236/python-chess-main/python-chess-main/FE/BanCo.html"
+            ><button
+              class="button btn-success"
+              onclick="startAIGame('Nhập Môn')"
+            >
+              ⭐<br />Nhập Môn
+            </button></a
+          >
+          <a
+            href="http://127.0.0.1:61236/python-chess-main/python-chess-main/FE/BanCo.html"
+            ><button
+              class="button btn-info"
+              onclick="startAIGame('Thành Thạo')"
+            >
+              ⭐⭐<br />
+              Thành Thạo
+            </button></a
+          >
+          <a
+            href="http://127.0.0.1:61236/python-chess-main/python-chess-main/FE/BanCo.html"
+            ><button
+              class="button btn-warning"
+              onclick="startAIGame('Cao Thủ')"
+            >
+              ⭐⭐⭐<br />
+              Cao Thủ
+            </button></a
+          >
+          <a
+            href="http://127.0.0.1:61236/python-chess-main/python-chess-main/FE/BanCo.html"
+            ><button
+              class="button btn-danger"
+              onclick="startAIGame('Kiện Tướng')"
+            >
+              ⭐⭐⭐⭐<br />
+              Kiện Tướng
+            </button></a
+          >
+        </div>
+        <button
+          class="button btn-secondary"
+          onclick="showScreen('menu-screen')"
+        >
+          ← Quay lại
+        </button>
+      </div>
+
+      <!-- ĐÁNH VỚI NGƯỜI -->
+      <div id="player-screen" class="screen">
+        <h2>Đánh với Người</h2>
+
+        <div class="input-group">
+          <label>Tên của bạn:</label>
+          <input
+            type="text"
+            id="player-name"
+            placeholder="Nhập tên người chơi"
+            maxlength="20"
+          />
+        </div>
+
+        <div class="input-group">
+          <label>Chọn hạng của bạn:</label>
+          <div class="rank-selector">
+            <div class="rank-option" onclick="selectRank('bronze')">
+              <div class="rank-icon">🥉</div>
+              <div class="rank-name">Đồng</div>
+            </div>
+            <div class="rank-option" onclick="selectRank('silver')">
+              <div class="rank-icon">🥈</div>
+              <div class="rank-name">Bạc</div>
+            </div>
+            <div class="rank-option" onclick="selectRank('gold')">
+              <div class="rank-icon">🥇</div>
+              <div class="rank-name">Vàng</div>
+            </div>
+          </div>
+        </div>
+
+        <button
+          class="button btn-primary"
+          onclick="findMatch()"
+          id="find-match-btn"
+        >
+          🎮 Tìm Trận Đấu
+        </button>
+
+        <div id="match-status"></div>
+
+        <button
+          class="button btn-secondary"
+          onclick="showScreen('menu-screen')"
+        >
+          ← Quay lại
+        </button>
+      </div>
+
+      <!-- MÀN HÌNH CHỜ -->
+      <div id="waiting-screen" class="screen">
+        <h2>Đang tìm đối thủ...</h2>
+        <div class="info-text">
+          <p>Đang tìm người chơi cùng hạng với bạn</p>
+          <p style="margin-top: 10px">⏳ Vui lòng chờ...</p>
+        </div>
+        <button class="button btn-secondary" onclick="cancelMatch()">
+          Hủy tìm kiếm
+        </button>
+      </div>
+
+      <!-- MÀN HÌNH TẠO/VÀO PHÒNG -->
+      <div id="room-screen" class="screen">
+        <h2>Phòng Riêng</h2>
+
+        <button class="button btn-primary" onclick="createRoom()">
+          ➕ Tạo Phòng Mới
+        </button>
+
+        <div id="room-code-section" style="display: none">
+          <div class="room-code-display">
+            <p>Mã Phòng:</p>
+            <div class="room-code" id="room-code-display"></div>
+          </div>
+          <p class="info-text">Chia sẻ mã này với bạn bè để họ vào phòng</p>
+        </div>
+
+        <div class="input-group" style="margin-top: 30px">
+          <label>Hoặc nhập mã phòng để vào:</label>
+          <input
+            type="text"
+            id="room-code-input"
+            placeholder="Nhập mã 6 số"
+            maxlength="6"
+          />
+        </div>
+
+        <button class="button btn-success" onclick="joinRoom()">
+          🚪 Vào Phòng
+        </button>
+
+        <button
+          class="button btn-secondary"
+          onclick="showScreen('menu-screen')"
+        >
+          ← Quay lại
+        </button>
+      </div>
+
+      <!-- MODAL BẢNG XẾP HẠNG -->
+      <div id="leaderboard-modal" class="modal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 999;">
+        <div class="modal-content" style="background: white; padding: 30px; border-radius: 12px; max-width: 600px; max-height: 80vh; overflow-y: auto;">
+          <h2 style="color: #667eea; margin-bottom: 20px;">🏆 BẢNG XẾP HẠNG</h2>
+          <div id="leaderboard-content" style="display: flex; flex-direction: column; gap: 10px;"></div>
+          <button class="button btn-secondary" onclick="closeLeaderboard()" style="margin-top: 20px;">Đóng</button>
+        </div>
+      </div>
+    </div>
+  </body>
+  <script src="script.js"></script>
+  <script src="auth.js"></script>
+  <script>
+    // ===== AUTHENTICATION CHECK & UI UPDATE =====
+    
+    function updateUserUI() {
+      const token = localStorage.getItem('authToken');
+      const userName = localStorage.getItem('userName');
+      const userElo = localStorage.getItem('userElo');
+      
+      const authButtons = document.getElementById('auth-buttons');
+      const userSection = document.getElementById('user-section');
+      const userNameEl = document.getElementById('user-name');
+      const userEloEl = document.getElementById('user-elo');
+      
+      if (token && userName) {
+        // User đã đăng nhập
+        authButtons.style.display = 'none';
+        userSection.style.display = 'block';
+        userNameEl.textContent = userName;
+        if (userElo) {
+          userEloEl.textContent = userElo;
+        }
+      } else {
+        // User chưa đăng nhập
+        authButtons.style.display = 'flex';
+        userSection.style.display = 'none';
+      }
+    }
+
+    // Đăng xuất
+    document.getElementById('btn-logout').addEventListener('click', () => {
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('userName');
+      localStorage.removeItem('userId');
+      localStorage.removeItem('userElo');
+      window.location.reload();
+    });
+
+    // Bảng xếp hạng
+    function showLeaderboard() {
+      fetch('/api/leaderboard?limit=50')
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            const leaderboard = data.leaderboard;
+            const content = document.getElementById('leaderboard-content');
+            content.innerHTML = '';
+            
+            if (leaderboard.length === 0) {
+              content.innerHTML = '<p style="color: #999;">Chưa có dữ liệu</p>';
+            } else {
+              leaderboard.forEach((player, index) => {
+                const rank = index + 1;
+                const rankClass = rank <= 3 ? `rank-${rank}` : '';
+                const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `${rank}`;
+                
+                const item = document.createElement('div');
+                item.className = 'leaderboard-item';
+                item.innerHTML = `
+                  <div class="leaderboard-rank ${rankClass}">${medal}</div>
+                  <div class="leaderboard-info">
+                    <div class="leaderboard-username">${player.username}</div>
+                    <div class="leaderboard-stats">
+                      🎯 W: ${player.wins} | L: ${player.losses} | D: ${player.draws}
+                    </div>
+                  </div>
+                  <div class="leaderboard-elo">⭐ ${player.elo}</div>
+                `;
+                content.appendChild(item);
+              });
+            }
+            
+            document.getElementById('leaderboard-modal').style.display = 'flex';
+          }
+        })
+        .catch(error => {
+          console.error('Error fetching leaderboard:', error);
+          alert('Lỗi khi tải bảng xếp hạng');
+        });
+    }
+
+    function closeLeaderboard() {
+      document.getElementById('leaderboard-modal').style.display = 'none';
+    }
+
+    // Khởi tạo UI khi trang load
+    window.addEventListener('DOMContentLoaded', () => {
+      updateUserUI();
+    });
+  </script>
+</body>

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Đăng Nhập - Cờ Vua Online</title>
+    <link href="auth.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <h1>♚ CỜ VUA ♔</h1>
+                <h2>Đăng Nhập</h2>
+            </div>
+
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="login-email">📧 Email</label>
+                    <input 
+                        type="email" 
+                        id="login-email" 
+                        name="email" 
+                        placeholder="Nhập email của bạn"
+                        required
+                    />
+                    <span class="error-message" id="email-error"></span>
+                </div>
+
+                <div class="form-group">
+                    <label for="login-password">🔐 Mật khẩu</label>
+                    <input 
+                        type="password" 
+                        id="login-password" 
+                        name="password" 
+                        placeholder="Nhập mật khẩu"
+                        required
+                    />
+                    <span class="error-message" id="password-error"></span>
+                </div>
+
+                <div class="remember-section">
+                    <label class="checkbox-container">
+                        <input type="checkbox" id="remember-me" name="remember" />
+                        <span class="checkmark"></span>
+                        <span>Nhớ mật khẩu</span>
+                    </label>
+                </div>
+
+                <button type="submit" class="btn-login">🚀 Đăng Nhập</button>
+            </form>
+
+            <div class="auth-footer">
+                <p>Bạn chưa có tài khoản? <a href="register.html">Đăng ký tại đây</a></p>
+                <p><a href="TrangChu.html">← Quay lại Trang Chủ</a></p>
+            </div>
+
+            <div class="error-alert" id="login-error-alert"></div>
+            <div class="success-alert" id="login-success-alert"></div>
+        </div>
+    </div>
+
+    <script src="auth.js"></script>
+    <script>
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            const rememberMe = document.getElementById('remember-me').checked;
+
+            // Reset error messages
+            document.getElementById('email-error').textContent = '';
+            document.getElementById('password-error').textContent = '';
+
+            // Validation
+            if (!email) {
+                document.getElementById('email-error').textContent = 'Vui lòng nhập email';
+                return;
+            }
+            if (!password) {
+                document.getElementById('password-error').textContent = 'Vui lòng nhập mật khẩu';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Lưu token vào localStorage
+                    localStorage.setItem('authToken', data.token);
+                    localStorage.setItem('userName', data.username);
+                    localStorage.setItem('userId', data.user_id);
+                    
+                    if (rememberMe) {
+                        localStorage.setItem('rememberEmail', email);
+                    }
+
+                    // Hiển thị thông báo thành công
+                    const successAlert = document.getElementById('login-success-alert');
+                    successAlert.textContent = '✅ Đăng nhập thành công! Đang chuyển hướng...';
+                    successAlert.style.display = 'block';
+
+                    // Chuyển hướng sau 1.5s
+                    setTimeout(() => {
+                        window.location.href = 'TrangChu.html';
+                    }, 1500);
+                } else {
+                    const errorAlert = document.getElementById('login-error-alert');
+                    errorAlert.textContent = '❌ ' + (data.message || 'Đăng nhập thất bại');
+                    errorAlert.style.display = 'block';
+                }
+            } catch (error) {
+                const errorAlert = document.getElementById('login-error-alert');
+                errorAlert.textContent = '❌ Lỗi kết nối. Vui lòng thử lại!';
+                errorAlert.style.display = 'block';
+            }
+        });
+
+        // Khôi phục email nếu có checkbox "Nhớ mật khẩu"
+        window.addEventListener('load', () => {
+            const rememberEmail = localStorage.getItem('rememberEmail');
+            if (rememberEmail) {
+                document.getElementById('login-email').value = rememberEmail;
+                document.getElementById('remember-me').checked = true;
+            }
+        });
+    </script>
+</body>
+</html>
